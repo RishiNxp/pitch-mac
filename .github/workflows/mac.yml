@@ -1,0 +1,34 @@
+name: Package Pitch for macOS
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: macos-15
+    strategy:
+      matrix:
+        arch: [arm64, x64]
+    steps:
+      - uses: actions/checkout@v4
+      - run: bash scripts/package-mac.sh ${{ matrix.arch }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Pitch-macOS-${{ matrix.arch }}
+          path: Pitch-macOS-*.zip
+  release:
+    needs: package
+    if: startsWith(github.ref, 'refs/tags/')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+      - run: gh release create "$GITHUB_REF_NAME" packages/*.zip --repo "$GITHUB_REPOSITORY" --title "Pitch for macOS $GITHUB_REF_NAME" --notes "Choose arm64 for Apple Silicon or x64 for Intel. Extract the ZIP and move Pitch.app to Applications."
+        env:
+          GH_TOKEN: ${{ github.token }}
