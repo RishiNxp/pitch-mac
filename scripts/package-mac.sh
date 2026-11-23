@@ -29,6 +29,29 @@ plist="$app/Contents/Info.plist"
 for key in CFBundleName CFBundleDisplayName; do /usr/libexec/PlistBuddy -c "Set :$key Pitch" "$plist"; done
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.rishinxp.pitch' "$plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile electron.icns' "$plist"
-codesign --force --deep --sign - "$app"
-codesign --verify --deep --strict "$app"
+: "${MAC_CERT_P12_BASE64:?Configure Developer ID Application signing certificate}"
+: "${MAC_CERT_PASSWORD:?Configure certificate password}"
+: "${APPLE_API_KEY_BASE64:?Configure notarization API private key}"
+: "${APPLE_API_KEY_ID:?Configure notarization key ID}"
+: "${APPLE_API_ISSUER:?Configure notarization issuer}"
+umask 077
+keychain="$work/pitch.keychain-db"
+password=$(openssl rand -hex 32)
+security create-keychain -p "$password" "$keychain"
+security unlock-keychain -p "$password" "$keychain"
+security set-keychain-settings -lut 3600 "$keychain"
+printf '%s' "$MAC_CERT_P12_BASE64" | base64 -D > "$work/cert.p12"
+security import "$work/cert.p12" -k "$keychain" -P "$MAC_CERT_PASSWORD" -T /usr/bin/codesign
+security set-key-partition-list -S apple-tool:,apple: -s -k "$password" "$keychain" >/dev/null
+identity=$(security find-identity -v -p codesigning "$keychain" | sed -n 's/.*"\(Developer ID Application:[^"]*\)".*/\1/p' | head -1)
+test -n "$identity"
+npx --yes --package=@electron/osx-sign@1.3.3 electron-osx-sign "$app" --identity="$identity" --keychain="$keychain" --platform=darwin --type=distribution
+codesign --verify --deep --strict --verbose=2 "$app"
+ditto -c -k --keepParent "$app" "$work/submission.zip"
+printf '%s' "$APPLE_API_KEY_BASE64" | base64 -D > "$work/key.p8"
+xcrun notarytool submit "$work/submission.zip" --key "$work/key.p8" --key-id "$APPLE_API_KEY_ID" --issuer "$APPLE_API_ISSUER" --wait --output-format json > "$work/submission.json"
+node -e 'const r=require(process.argv[1]); console.log("Apple notarization:",r.id,r.status); if(r.status!=="Accepted")process.exit(1)' "$work/submission.json"
+xcrun stapler staple "$app"
+xcrun stapler validate "$app"
+spctl --assess --type execute --verbose=4 "$app"
 ditto -c -k --keepParent "$app" "Pitch-macOS-$arch.zip"

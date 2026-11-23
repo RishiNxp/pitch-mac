@@ -1,7 +1,9 @@
 # Pitch for macOS
 
-Download the ZIP for your processor from [Releases](https://github.com/RishiNxp/pitch-mac/releases). Choose arm64 for Apple Silicon or x64 for Intel. Extract Pitch.app and move it to Applications. The app runs offline and uses the Pitch logo. These builds use an ad hoc signature and are not Apple-notarized.
+Download the ZIP for your processor from [Releases](https://github.com/RishiNxp/pitch-mac/releases). Choose arm64 for Apple Silicon or x64 for Intel and move the extracted Pitch.app to Applications. Release v1.0.0 used ad hoc signing.
 
-## Build and release
+## Release builds
 
-The repository includes the tested renderer in dist so packaging works from a fresh checkout. After editing the React sources, run npm ci, npm test, and npm run build, then commit the updated dist alongside the source. On a Mac, run bash scripts/package-mac.sh arm64 or bash scripts/package-mac.sh x64. Pushing a version tag builds and publishes both ZIPs through GitHub Actions.
+The release workflow builds the calculator, signs the Electron application using Developer ID Application, submits it to Apple for notarization, staples and validates the ticket, and checks Gatekeeper before packaging. A release tag publishes only after both architectures pass.
+
+Configure the repository Actions secrets MAC_CERT_P12_BASE64 (base64 PKCS#12 certificate with private key), MAC_CERT_PASSWORD, APPLE_API_KEY_BASE64 (base64 App Store Connect team API private key), APPLE_API_KEY_ID, and APPLE_API_ISSUER. Provide these through GitHub secret settings. Push a version tag to build a release.
