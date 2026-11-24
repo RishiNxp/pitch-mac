@@ -33,9 +33,9 @@ for key in CFBundleName CFBundleDisplayName; do /usr/libexec/PlistBuddy -c "Set 
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile electron.icns' "$plist"
 if [[ "$mode" == preview ]]; then
   test "$(uname -m)" = arm64
-  lipo -verify_arch arm64 "$app/Contents/MacOS/Electron"
+  lipo "$app/Contents/MacOS/Electron" -verify_arch arm64
   /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 1.2.0' "$plist"
-  /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 1.2.0.1' "$plist"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 12002' "$plist"
   codesign --force --sign - "$app"
   codesign --verify --deep --strict "$app"
   ditto -c -k --keepParent "$app" Pitch-macOS-arm64.zip

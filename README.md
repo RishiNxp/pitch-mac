@@ -3,7 +3,7 @@
 ## Download the current Apple Silicon preview
 
 1. Choose Apple menu → **About This Mac**. A **Chip** entry such as Apple M1, M2, M3 or M4 identifies an Apple Silicon Mac. For an Intel machine, see [older Intel downloads](https://github.com/RishiNxp/pitch-mac/releases/tag/v1.0.0).
-2. Open the [Apple Silicon preview release](https://github.com/RishiNxp/pitch-mac/releases/tag/preview-1.2.0-1). Under **Assets**, download **Pitch-macOS-arm64.zip**. The ZIP contains the application. The separate source archives are for developers.
+2. Open the [Apple Silicon preview release](https://github.com/RishiNxp/pitch-mac/releases/tag/preview-1.2.0-2). Under **Assets**, download **Pitch-macOS-arm64.zip**. The ZIP contains the application. The separate source archives are for developers.
 3. In Finder, open **Downloads** and double-click the ZIP if Safari has not already expanded it. Drag **Pitch.app** into **Applications**. If replacing an earlier Pitch, first open the old app and use **Save file** to back up your layout, then quit it.
 4. Open **Applications → Pitch**. Choose **Start a layout** on the welcome screen. The current calculator includes the collapsible RPM board, motion playback, catalog belt fitting, wheel-speed and torque estimates.
 5. To try it offline, create a layout, save it, quit Pitch, disconnect from the network, reopen Pitch, and open the saved file. To uninstall, quit and move Pitch.app from Applications to Trash. Keep your exported layouts.
