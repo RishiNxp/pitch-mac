@@ -1,19 +1,25 @@
 # Pitch for macOS
 
-## Download
+## Download the current Apple Silicon preview
 
-Open the [Pitch macOS releases page](https://github.com/RishiNxp/pitch-mac/releases). Download **Pitch-macOS-arm64.zip** for Apple Silicon or **Pitch-macOS-x64.zip** for Intel. Extract the ZIP and move **Pitch.app** to Applications.
+1. Choose Apple menu → **About This Mac**. A **Chip** entry such as Apple M1, M2, M3 or M4 identifies an Apple Silicon Mac. For an Intel machine, see [older Intel downloads](https://github.com/RishiNxp/pitch-mac/releases/tag/v1.0.0).
+2. Open the [Apple Silicon preview release](https://github.com/RishiNxp/pitch-mac/releases/tag/preview-1.2.0-1). Under **Assets**, download **Pitch-macOS-arm64.zip**. The ZIP contains the application. The separate source archives are for developers.
+3. In Finder, open **Downloads** and double-click the ZIP if Safari has not already expanded it. Drag **Pitch.app** into **Applications**. If replacing an earlier Pitch, first open the old app and use **Save file** to back up your layout, then quit it.
+4. Open **Applications → Pitch**. Choose **Start a layout** on the welcome screen. The current calculator includes the collapsible RPM board, motion playback, catalog belt fitting, wheel-speed and torque estimates.
+5. To try it offline, create a layout, save it, quit Pitch, disconnect from the network, reopen Pitch, and open the saved file. To uninstall, quit and move Pitch.app from Applications to Trash. Keep your exported layouts.
 
-The latest public release is v1.0.0. It is ad hoc signed and not notarized, so it does not pass Apple's normal Gatekeeper checks. The updated release workflow will publish a signed and notarized version after valid Apple credentials are configured.
+This preview is ad hoc signed. It has no Apple Developer ID signature or Apple notarization. macOS or a managed-device policy may block launch. If that happens, use [Pitch in your browser](https://rishinxp.github.io/pitch-web/). See [Apple’s guide to opening downloaded apps](https://support.apple.com/en-us/102445). An automated launch on the build runner does not test every macOS version or simulate a browser download with Gatekeeper.
 
-## Build and publish
+**Optional integrity check.** Download SHA256SUMS.txt from the same release. With both files in Downloads, run:
 
-Building and notarizing macOS applications requires a Mac with Xcode command line tools and an Apple Developer ID Application certificate. The GitHub Actions workflow also needs these repository secrets:
+~~~sh
+cd ~/Downloads
+shasum -a 256 -c SHA256SUMS.txt
+~~~
 
-- **MAC_CERT_P12_BASE64** and **MAC_CERT_PASSWORD** for the Developer ID certificate.
-- **APPLE_API_KEY_BASE64**, **APPLE_API_KEY_ID**, and **APPLE_API_ISSUER** for Apple notarization.
+## Build on an Apple Silicon Mac
 
-Clone this repository and review the workflow:
+Install Node.js 22.12 or newer and the Xcode command line tools. From Terminal:
 
 ~~~sh
 git clone https://github.com/RishiNxp/pitch-mac.git
@@ -21,20 +27,13 @@ cd pitch-mac
 npm ci
 npm test
 npm run build
+bash scripts/package-mac.sh arm64 preview
 ~~~
 
-After pushing the release source to **main**, create a new unused version tag to start the packaging workflow:
+This creates Pitch-macOS-arm64.zip in the repository root. Downloading the Electron runtime requires internet during packaging. End users only need the ZIP.
 
-~~~sh
-git add -A
-git commit -m "Describe the macOS update"
-git push origin main
-git tag v1.1.1
-git push origin v1.1.1
-~~~
+## Maintainer release steps
 
-Both processor builds must pass signing, notarization, stapling, and Gatekeeper assessment before the release workflow publishes their ZIP files. You need write access to push to this repository.
-
-## Run the calculator from source
-
-Use Node.js 22.12 or newer and npm. Run **npm run dev** to start the local Vite development server.
+- **Tester preview:** Update the shared frontend on main, review the application version in the packaging script, then push an unused tag matching preview-* on the tested commit. The Apple Silicon workflow tests the frontend, builds on macOS arm64, verifies the executable architecture and signature, launches the extracted ZIP, checks for the welcome button and publishes a GitHub prerelease with the ZIP and SHA-256 checksum.
+- **Trusted distribution:** Configure MAC_CERT_P12_BASE64 and MAC_CERT_PASSWORD for the Developer ID Application certificate, plus APPLE_API_KEY_BASE64, APPLE_API_KEY_ID and APPLE_API_ISSUER for notarization. Push an unused v-prefixed version tag. The separate trusted workflow signs, notarizes, staples and assesses both architectures before publishing.
+- **Before announcing support:** Download the actual published ZIP on a tester Mac. Record the chip, macOS version, Gatekeeper result, offline calculation, save/reopen result and behavior when replacing the previous app.

@@ -2,6 +2,8 @@
 set -euo pipefail
 arch=${1:?Specify arm64 or x64}
 case "$arch" in arm64|x64) ;; *) exit 2 ;; esac
+mode=${2:-trusted}
+case "$mode:$arch" in trusted:*|preview:arm64) ;; *) echo "Invalid packaging mode" >&2; exit 2 ;; esac
 version=v45.4.1
 asset="electron-$version-darwin-$arch.zip"
 base="https://github.com/electron/electron/releases/download/$version"
@@ -29,6 +31,16 @@ plist="$app/Contents/Info.plist"
 for key in CFBundleName CFBundleDisplayName; do /usr/libexec/PlistBuddy -c "Set :$key Pitch" "$plist"; done
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIdentifier com.rishinxp.pitch' "$plist"
 /usr/libexec/PlistBuddy -c 'Set :CFBundleIconFile electron.icns' "$plist"
+if [[ "$mode" == preview ]]; then
+  test "$(uname -m)" = arm64
+  lipo -verify_arch arm64 "$app/Contents/MacOS/Electron"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 1.2.0' "$plist"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 1.2.0.1' "$plist"
+  codesign --force --sign - "$app"
+  codesign --verify --deep --strict "$app"
+  ditto -c -k --keepParent "$app" Pitch-macOS-arm64.zip
+  exit 0
+fi
 : "${MAC_CERT_P12_BASE64:?Configure Developer ID Application signing certificate}"
 : "${MAC_CERT_PASSWORD:?Configure certificate password}"
 : "${APPLE_API_KEY_BASE64:?Configure notarization API private key}"

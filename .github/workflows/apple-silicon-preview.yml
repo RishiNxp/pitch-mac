@@ -1,0 +1,45 @@
+name: Apple Silicon preview
+on:
+  push:
+    tags: ['preview-*']
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: macos-15
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm ci && npm test && npm run build
+      - run: bash scripts/package-mac.sh arm64 preview
+      - name: Launch extracted app and verify welcome screen
+        run: |
+          mkdir "$RUNNER_TEMP/launch-test"
+          ditto -x -k Pitch-macOS-arm64.zip "$RUNNER_TEMP/launch-test"
+          cd "$RUNNER_TEMP/launch-test"
+          ./Pitch.app/Contents/MacOS/Electron --remote-debugging-port=19392 > "$RUNNER_TEMP/pitch.log" 2>&1 &
+          pid=$!
+          trap 'kill "$pid" 2>/dev/null || true' EXIT
+          node "$GITHUB_WORKSPACE/scripts/check-welcome.mjs"
+      - run: shasum -a 256 Pitch-macOS-arm64.zip > SHA256SUMS.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: apple-silicon-preview
+          path: |
+            Pitch-macOS-arm64.zip
+            SHA256SUMS.txt
+  publish:
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: apple-silicon-preview
+      - run: gh release create "$GITHUB_REF_NAME" Pitch-macOS-arm64.zip SHA256SUMS.txt --repo "$GITHUB_REPOSITORY" --verify-tag --prerelease --title "Pitch for Apple Silicon · $GITHUB_REF_NAME" --notes "Apple Silicon tester preview. Download the arm64 ZIP, extract it, and drag Pitch.app to Applications. Ad hoc signed; Apple notarization is pending. If macOS blocks launch, use the web edition."
+        env:
+          GH_TOKEN: ${{ github.token }}
