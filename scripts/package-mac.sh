@@ -35,8 +35,8 @@ if [[ "$mode" == preview ]]; then
   test "$(uname -m)" = arm64
   lipo "$app/Contents/MacOS/Electron" -verify_arch arm64
   /usr/libexec/PlistBuddy -c 'Set :CFBundleShortVersionString 1.2.0' "$plist"
-  /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 12002' "$plist"
-  codesign --force --sign - "$app"
+  /usr/libexec/PlistBuddy -c 'Set :CFBundleVersion 12003' "$plist"
+  codesign --force --deep --sign - "$app"
   codesign --verify --deep --strict "$app"
   ditto -c -k --keepParent "$app" Pitch-macOS-arm64.zip
   exit 0
